@@ -93,3 +93,5 @@ PRs welcome for new signal samples, IR device libraries, or additional FAP examp
 ## License
 
 MIT — see [LICENSE](LICENSE).
+Flipperzero project. 
+7929e5157079276957f3545d8d2c797072d1253e
