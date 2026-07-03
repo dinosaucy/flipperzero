@@ -1,204 +1,95 @@
-# Flipper Zero
+# flipperzero
 
-A curated, practical reference of Command-Line Interface (CLI) commands for the [Flipper Zero](https://flipperzero.one/) multi-tool device. Built for pentesters, hardware hackers, IT/security students, and everyday Flipper Zero owners who want a fast, no-fluff command lookup instead of digging through the official docs every time.
+A collection of useful tools, scripts, and custom apps for the Flipper Zero.
 
-> ⚠️ **Disclaimer:** This repository is for educational and authorized security-testing purposes only. Only use these commands on devices, networks, and signals you own or have explicit permission to test. Misuse of RFID, NFC, Sub-GHz, or BadUSB features may be illegal in your jurisdiction.
+> ⚠️ **Use responsibly.** Sub-GHz replay, NFC/RFID cloning, and BadUSB payloads should only
+> be used on devices, cards, and computers you own or are explicitly authorized to test.
+> Unauthorized use may be illegal in your jurisdiction.
 
----
+## Structure
 
-## Table of Contents
-
-- [Getting Started](#getting-started)
-- [Connecting to the CLI](#connecting-to-the-cli)
-- [Command Reference](#command-reference)
-  - [System & Device](#system--device)
-  - [Storage (SD Card)](#storage-sd-card)
-  - [Sub-GHz](#sub-ghz)
-  - [NFC](#nfc)
-  - [RFID (125 kHz)](#rfid-125-khz)
-  - [Infrared (IR)](#infrared-ir)
-  - [iButton](#ibutton)
-  - [GPIO](#gpio)
-  - [Bluetooth (BLE)](#bluetooth-ble)
-  - [Power & Logging](#power--logging)
-  - [Fun Extras](#fun-extras)
-- [Contributing](#contributing)
-- [License](#license)
-
----
-
-## Getting Started
-
-This repo assumes you have:
-
-1. A Flipper Zero running official or a compatible custom firmware.
-2. A USB-C cable to connect it to your computer.
-3. A terminal (macOS/Linux: `screen` or `minicom`; Windows: `PuTTY`) or the browser-based [Flipper Lab](https://lab.flipper.net/) / [Web Serial Terminal](https://googlechromelabs.github.io/serial-terminal/).
-
-All commands below are typed directly into the Flipper Zero CLI shell after connecting.
-
-## Connecting to the CLI
-
-**macOS / Linux**
-```bash
-ls /dev/cu.*                     # find your device (macOS)
-screen /dev/cu.usbmodemflip_XXXX # connect
-# exit: Ctrl+A, then K, then Y
+```
+flipperzero/
+├── subghz/          Sub-GHz signal capture & replay (CLI helper + .sub samples)
+├── nfc_rfid/         NFC/RFID clone & emulate tools (CLI helper + .nfc samples)
+├── infrared/         IR universal remote scripts & .ir file builder
+├── fap_apps/          Custom FAP applications (C, built with ufbt)
+├── badusb/            BadUSB ducky-script payloads
+└── scripts/           Shared Python requirements
 ```
 
-**Windows**
-1. Open Device Manager → Ports (COM & LPT) → note the COM number.
-2. Open PuTTY → Connection type: Serial → Serial line: `COMx` → Speed: `230400` → Open.
+## Prerequisites
 
-Once connected, type `help` or `?` to list all available commands live on your device.
+- A Flipper Zero with qFlipper drivers installed
+- Python 3.8+
+- `pip install -r scripts/requirements.txt`
+- [ufbt](https://github.com/flipperdevices/flipperzero-ufbt) for FAP development: `pip install ufbt`
 
----
+## 1. Sub-GHz (`subghz/`)
 
-## Command Reference
+`capture_replay.py` talks to the Flipper over its serial CLI to list and transmit `.sub` files.
 
-### System & Device
+```bash
+python subghz/capture_replay.py list
+python subghz/capture_replay.py replay subghz/samples/example_princeton.sub
+```
 
-| Command | Description |
-|---|---|
-| `help` / `?` | List all available CLI commands |
-| `info device` / `!` | Show detailed device information |
-| `info power` | Show power/battery system info |
-| `date` | Display or set current date and time |
-| `free` | Show heap memory allocator info |
-| `free blocks` | Show heap fragmentation / free block sizes |
-| `top` | Live view of running threads (like Linux `top`, Ctrl+C to quit) |
-| `uptime` | Time since last reboot |
-| `neofetch` | Fun system info banner, like Linux `neofetch` |
-| `factory_reset` | Reset device to factory settings (SD card data kept) |
-| `sysctl debug <0/1>` | Enable/disable system debug mode |
+Note: actual RF capture is driven from the Flipper's own Sub-GHz app UI; this script
+helps automate transmission and file management of captures you've already made.
 
-### Storage (SD Card)
+## 2. NFC / RFID (`nfc_rfid/`)
 
-| Command | Description |
-|---|---|
-| `storage info /ext` | Get filesystem info for the SD card |
-| `storage list /ext` | List files/directories at a path |
-| `storage tree /ext` | Recursively list all files and folders |
-| `storage read /ext/path/file.txt` | Print file contents |
-| `storage write /ext/path/file.txt` | Write text to a file (Ctrl+C to stop) |
-| `storage copy <src> <dst>` | Copy a file |
-| `storage rename <old> <new>` | Rename/move a file or directory |
-| `storage remove /ext/path` | Delete a file or empty directory |
-| `storage mkdir /ext/newfolder` | Create a new directory |
-| `storage md5 /ext/path/file` | Show MD5 hash of a file |
-| `storage stat /ext/path/file` | Show file/folder metadata |
-| `storage format /ext` | ⚠️ Format the SD card (destructive) |
+```bash
+python nfc_rfid/nfc_tools.py read
+python nfc_rfid/nfc_tools.py emulate nfc_rfid/samples/mifare_classic.nfc
+```
 
-### Sub-GHz
+## 3. Infrared (`infrared/`)
 
-| Command | Description |
-|---|---|
-| `subghz chat <freq_hz> <0/1>` | Chat with nearby Flipper Zero users over Sub-GHz radio |
-| `subghz rx <freq_hz> <0/1>` | Listen for a Sub-GHz signal |
-| `subghz rx raw <freq_hz>` | Receive a signal in raw format |
-| `subghz tx <key_hex> <freq_hz> <te_us> <repeat> <0/1>` | Transmit a key |
-| `subghz tx from file <path> <repeat> <0/1>` | Transmit a saved signal file |
-| `subghz decode raw <path>` | Decode a raw signal file |
+Generate `.ir` files programmatically:
 
-> Valid frequency ranges (Hz): `299999755–348000000`, `386999938–464000000`, `778999847–928000000`. Some frequencies are region-restricted — check [Flipper's frequency guide](https://docs.flipper.net/zero/sub-ghz/frequencies) first.
+```bash
+cd infrared
+python ir_builder.py
+```
 
-### NFC
+Or use the ready-made universal remote sample at `infrared/samples/tv_universal.ir`
+— copy it to `/ext/infrared/` on your Flipper's SD card.
 
-| Command | Description |
-|---|---|
-| `nfc` | Enter the NFC sub-shell (`help` inside for more, `exit` to leave) |
-| `dump f <path>` | Dump physical card data to a `.nfc` file |
-| `emulate f <path>` | Emulate a saved NFC card file |
-| `scanner` | Detect and list all protocols supported by a tag |
-| `mfu info` | Basic info about a Mifare Ultralight tag |
-| `mfu rdbl b <block>` | Read a specific data block |
-| `mfu wrbl b <block> d <data>` | Write data to a specific block |
-| `raw p <protocol> d <data>` | Send raw bytes using a chosen protocol |
+## 4. Custom FAP apps (`fap_apps/`)
 
-### RFID (125 kHz)
+Example "Hello FAP" app demonstrating GUI + input handling.
 
-| Command | Description |
-|---|---|
-| `rfid read` | Read a low-frequency RFID card (ASK/PSK) |
-| `rfid emulate <type> <data>` | Emulate an RFID card |
-| `rfid write <type> <data>` | Write data to a writable RFID tag |
-| `rfid raw read <ask/psk> <file>` | Save raw card data to a file |
-| `rfid raw emulate <file>` | Emulate raw data from a saved file |
-| `rfid raw analyze <file>` | Analyze/decode raw data from a file |
+```bash
+cd fap_apps/hello_fap
+ufbt              # builds the .fap
+ufbt launch       # flashes and runs it on a connected Flipper
+```
 
-### Infrared (IR)
+## 5. BadUSB (`badusb/payloads/`)
 
-| Command | Description |
-|---|---|
-| `ir rx` | Read and decode an incoming IR signal |
-| `ir rx raw` | Read raw IR data |
-| `ir tx <protocol> <address> <command>` | Send an IR command |
-| `ir tx raw F <freq> DC <duty> <samples>` | Send raw IR data |
-| `ir universal list <remote>` | List commands for a universal remote (tv, audio, ac, projector) |
-| `ir universal <remote> <signal>` | Send a universal remote command |
+Ducky-script style payloads. Copy `.txt` files to `/ext/badusb/` on the Flipper's SD card,
+then run them from the BadUSB app.
 
-### iButton
+- `open_notepad_demo.txt` — harmless demo, opens Notepad and types text
+- `wifi_profile_export.txt` — exports saved Wi-Fi profiles on Windows (your own machine only)
 
-| Command | Description |
-|---|---|
-| `ikey read` | Read an iButton key |
-| `ikey emulate <type> <data>` | Emulate an iButton key |
-| `ikey write dallas <data>` | Write data to a Dallas iButton key |
+## Uploading files to the Flipper
 
-### GPIO
+Easiest via qFlipper's file manager, or via CLI:
 
-| Command | Description |
-|---|---|
-| `gpio mode <pin> <0/1>` | Set pin to input (0) or output (1) |
-| `gpio set <pin> <0/1>` | Set output pin value |
-| `gpio read <pin>` | Read a pin's current value |
+```bash
+# from the Flipper CLI (screen /dev/ttyACM0 115200, or use qFlipper's terminal)
+storage list /ext
+```
 
-Valid pins: `PA7, PA6, PA4, PB3, PB2, PC3, PC1, PC0`
-
-### Bluetooth (BLE)
-
-| Command | Description |
-|---|---|
-| `bt` | Radio core (BLE) factory test tool |
-| `bt hci_info` | Display Bluetooth HCI version info |
-
-### Power & Logging
-
-| Command | Description |
-|---|---|
-| `power off` | Power off the device |
-| `power reboot` | Reboot the device |
-| `power reboot2dfu` | Reboot into DFU (firmware update) mode |
-| `log` | Start logging at the current level |
-| `log debug` / `log trace` | Verbose logging levels (impacts performance) |
-| `update install <path.fuf>` | Install a firmware update package |
-| `update backup <path.tar>` | Back up internal storage |
-| `update restore <path.tar>` | Restore internal storage from backup |
-
-### Fun Extras
-
-| Command | Description |
-|---|---|
-| `vibro <1/0>` | Turn the vibration motor on/off |
-| `led r/g/b <0-255>` | Set status LED color components |
-| `led bl <0-255>` | Set backlight brightness |
-| `buzzer note <note> <duration>` | Play a musical note, e.g. `buzzer note cs3 500ms` |
-| `buzzer freq <hz> <duration>` | Play a tone at a specific frequency |
-
----
+Drag-and-drop through qFlipper is the simplest route for `.sub`, `.nfc`, `.ir`, and
+BadUSB `.txt` files — just drop them into the matching folder on the SD card.
 
 ## Contributing
 
-Found a useful command that's missing, or want to add a script/shortcut? Pull requests are welcome:
-
-1. Fork the repo.
-2. Add your command(s) to the relevant table (or create a new section if needed).
-3. Open a pull request with a short description of what it does and why it's useful.
+PRs welcome for new signal samples, IR device libraries, or additional FAP examples.
 
 ## License
 
-MIT — use freely, contribute back if you can.
-
-## Credits
-
-Command reference compiled from the [official Flipper Zero documentation](https://docs.flipper.net/zero/development/cli) and the Flipper community forum.
+MIT — see [LICENSE](LICENSE).

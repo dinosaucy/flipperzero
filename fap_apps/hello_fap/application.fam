@@ -1,0 +1,8 @@
+App(
+    appid="hello_fap",
+    name="Hello FAP",
+    apptype=FlipperAppType.EXTERNAL,
+    entry_point="hello_fap_main",
+    stack_size=1 * 1024,
+    fap_category="Examples",
+)
