@@ -1,6 +1,11 @@
 # flipperzero
 
-A collection of useful tools, scripts, and custom apps for the Flipper Zero.
+My personal toolbox for the Flipper Zero — built while I learn offensive security hands-on.
+
+I'm a cybersecurity student, and this repo is where I collect and build scripts, payloads,
+and custom firmware apps as I work through Sub-GHz, RFID/NFC, IR, and USB attack surfaces.
+Nothing here is theoretical — everything gets tested against my own hardware before it lands
+in this repo.
 
 > ⚠️ **Use responsibly.** Sub-GHz replay, NFC/RFID cloning, and BadUSB payloads should only
 > be used on devices, cards, and computers you own or are explicitly authorized to test.
