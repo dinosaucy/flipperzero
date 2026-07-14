@@ -46,4 +46,4 @@ if __name__ == "__main__":
             sys.exit(1)
         emulate(sys.argv[2])
     else:
-        print(f"Unknown action: {action}")
+        print(f"Unknown action: {action}") 
